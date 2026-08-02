@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FBF6EC">
+<title>Debby Crown Enterprises — Wears & Home Essentials</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (real backend: stores your products, prices and photos permanently) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    color-scheme: light only;
+    --green-deep:#163628; --green-mid:#2D6A4F; --gold:#C9A227; --gold-soft:#E7CD79;
+    --cream:#FBF6EC; --cream-2:#F3ECDC; --charcoal:#211F1B; --whatsapp:#25D366; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;background:var(--cream);color-scheme:light only;}
+  body{margin:0;background:var(--cream);color:var(--charcoal);font-family:'Work Sans',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;color-scheme:light only;}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;color:var(--green-deep);}
+  a{color:inherit;} img{max-width:100%;display:block;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700;}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+
+  header{position:sticky;top:0;z-index:50;background:var(--cream);border-bottom:1px solid rgba(22,54,40,0.1);}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0;position:relative;}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:var(--green-deep);text-decoration:none;letter-spacing:-.01em;}
+  .logo .crownmark{width:30px;height:30px;flex:none;}
+  .navlinks{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-size:14.5px;font-weight:500;}
+  .navlinks a{text-decoration:none;color:var(--charcoal);opacity:.8;}
+  .navlinks a:hover{opacity:1;color:var(--green-mid);}
+  .nav-cta{display:flex;gap:10px;align-items:center;}
+  .icon-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--green-deep);color:var(--cream);text-decoration:none;transition:transform .15s ease,background .15s ease;border:none;cursor:pointer;flex:none;}
+  .icon-btn:hover{transform:translateY(-2px);background:var(--green-mid);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  /* hamburger */
+  .hamburger{display:none;width:38px;height:38px;border-radius:50%;border:none;background:none;cursor:pointer;align-items:center;justify-content:center;flex:none;}
+  .hamburger span{display:block;width:20px;height:2px;background:var(--green-deep);position:relative;transition:transform .2s ease, opacity .2s ease;}
+  .hamburger span::before,.hamburger span::after{content:'';position:absolute;left:0;width:20px;height:2px;background:var(--green-deep);transition:transform .2s ease, top .2s ease;}
+  .hamburger span::before{top:-6px;}
+  .hamburger span::after{top:6px;}
+  .hamburger.open span{background:transparent;}
+  .hamburger.open span::before{transform:translateY(6px) rotate(45deg);}
+  .hamburger.open span::after{transform:translateY(-6px) rotate(-45deg);}
+
+  @media (max-width:820px){
+    .navlinks{display:none;}
+    .hamburger{display:flex;}
+  }
+
+  .mobile-menu{
+    display:none;
+    position:absolute; top:100%; left:0; right:0;
+    background:var(--cream);
+    border-bottom:1px solid rgba(22,54,40,.12);
+    box-shadow:0 16px 30px -18px rgba(22,54,40,.3);
+    flex-direction:column;
+    padding:10px 24px 20px;
+  }
+  .mobile-menu.open{display:flex;}
+  .mobile-menu a{
+    padding:13px 4px; font-size:15.5px; font-weight:600; text-decoration:none; color:var(--charcoal);
+    border-bottom:1px solid rgba(22,54,40,.08);
+  }
+  .mobile-menu .mobile-socials{display:flex;gap:10px;padding-top:16px;}
+
+  .hero{padding:56px 0 40px;}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center;}
+  @media (max-width:900px){.hero .wrap{grid-template-columns:1fr;}}
+  .hero h1{font-size:clamp(32px,5vw,52px);line-height:1.05;font-weight:600;letter-spacing:-.01em;}
+  .hero h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+  .hero p.lead{margin-top:16px;font-size:16.5px;max-width:46ch;opacity:.85;}
+  .hero-ctas{display:flex;gap:14px;margin-top:26px;flex-wrap:wrap;}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:14px 22px;border-radius:100px;font-weight:600;font-size:15px;text-decoration:none;border:1.5px solid transparent;transition:transform .15s ease,box-shadow .15s ease;cursor:pointer;}
+  .btn:hover{transform:translateY(-2px);}
+  .btn-whatsapp{background:var(--whatsapp);color:#fff;}
+  .btn-outline{border-color:var(--green-deep);color:var(--green-deep);background:none;}
+  .btn-outline:hover{background:var(--green-deep);color:var(--cream);}
+  .btn svg{width:18px;height:18px;}
+  .hero-tagcard{position:relative;background:var(--green-deep);border-radius:20px;padding:30px;color:var(--cream);box-shadow:0 30px 60px -20px rgba(22,54,40,.4);}
+  .hero-tagcard h3{color:var(--gold-soft);font-size:19px;font-weight:600;margin-bottom:8px;}
+  .hero-tagcard p{opacity:.85;font-size:14px;margin-bottom:14px;}
+
+  .catstrip{background:var(--green-deep);padding:14px 0;}
+  .catstrip .wrap{display:flex;gap:8px;overflow-x:auto;}
+  .catstrip a{flex:none;padding:9px 18px;border-radius:100px;font-size:13.5px;font-weight:600;color:var(--cream);text-decoration:none;background:rgba(251,246,236,.08);white-space:nowrap;}
+  .catstrip a:hover{background:var(--gold);color:var(--green-deep);}
+
+  section.category{padding:56px 0;}
+  section.category:nth-of-type(even){background:var(--cream-2);}
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:26px;gap:20px;flex-wrap:wrap;}
+  .section-head h2{font-size:clamp(23px,3.5vw,30px);font-weight:600;}
+  .section-head p{margin-top:6px;opacity:.7;font-size:14.5px;max-width:50ch;}
+  .add-btn{font-size:13px;font-weight:700;color:var(--green-deep);background:var(--gold-soft);border:none;border-radius:100px;padding:9px 16px;cursor:pointer;display:none;}
+  .admin-on .add-btn{display:inline-flex;align-items:center;gap:6px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}
+  .card{background:#fff;border-radius:var(--radius);overflow:hidden;border:1px solid rgba(22,54,40,.08);display:flex;flex-direction:column;position:relative;}
+  .placeholder-img{aspect-ratio:4/5;width:100%;object-fit:cover;background:repeating-linear-gradient(135deg,var(--green-deep) 0 2px,transparent 2px 14px),var(--green-mid);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--cream);text-align:center;padding:14px;}
+  .placeholder-img svg{width:28px;height:28px;opacity:.85;}
+  .placeholder-img span{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.05em;opacity:.85;}
+  .card-body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:9px;flex:1;}
+  .card-body h4{font-size:15px;font-weight:600;margin:0;}
+  .tag-price{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .price-tag{position:relative;background:var(--gold-soft);color:var(--green-deep);font-family:'Space Mono',monospace;font-weight:700;font-size:13.5px;padding:6px 12px 6px 18px;border-radius:3px 10px 10px 3px;}
+  .price-tag::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:var(--cream);border:1px solid rgba(22,54,40,.3);}
+  .order-link{font-size:12px;font-weight:700;color:var(--whatsapp);text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+  .order-link svg{width:13px;height:13px;}
+  .card-edit-row{display:flex;gap:8px;}
+  .mini-btn{flex:1;font-size:11.5px;font-weight:700;border:none;border-radius:8px;padding:7px;cursor:pointer;}
+  .mini-btn.edit{background:var(--green-deep);color:var(--cream);}
+  .mini-btn.del{background:#f3d6cf;color:#8a2e17;}
+
+  .howto{background:var(--green-deep);color:var(--cream);padding:56px 0;}
+  .howto .section-head h2,.howto .section-head p{color:var(--cream);}
+  .howto .section-head p{opacity:.75;}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  @media (max-width:800px){.steps{grid-template-columns:1fr;}}
+  .step{background:rgba(251,246,236,.06);border:1px solid rgba(251,246,236,.15);border-radius:var(--radius);padding:24px;}
+  .step .num{font-family:'Fraunces',serif;font-style:italic;color:var(--gold);font-size:32px;display:block;margin-bottom:8px;}
+  .step h4{font-size:16.5px;font-weight:600;margin-bottom:6px;color:var(--cream);}
+  .step p{font-size:13.5px;opacity:.75;margin:0;}
+
+  footer{padding:56px 0 36px;}
+  .contact-card{background:var(--gold-soft);border-radius:20px;padding:38px;display:grid;grid-template-columns:1.2fr .8fr;gap:26px;align-items:center;}
+  @media (max-width:800px){.contact-card{grid-template-columns:1fr;}}
+  .contact-card h2{font-size:clamp(23px,3vw,30px);}
+  .contact-card p{margin-top:8px;opacity:.8;font-size:14.5px;}
+  .contact-ctas{display:flex;flex-direction:column;gap:10px;}
+  .contact-ctas .btn{justify-content:center;}
+  .foot-bottom{margin-top:40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;font-size:12.5px;opacity:.6;}
+  .foot-socials{display:flex;gap:10px;}
+
+  .float-wa{position:fixed;bottom:22px;right:22px;z-index:60;width:56px;height:56px;border-radius:50%;background:var(--whatsapp);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 26px rgba(37,211,102,.45);text-decoration:none;}
+  .float-wa svg{width:26px;height:26px;}
+
+  .lock-btn{position:fixed;bottom:22px;left:22px;z-index:60;width:44px;height:44px;border-radius:50%;background:var(--charcoal);color:var(--gold-soft);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.55;}
+  .lock-btn:hover{opacity:1;}
+  .lock-btn svg{width:20px;height:20px;}
+  .admin-on .lock-btn{background:var(--gold);color:var(--green-deep);opacity:1;}
+  .admin-banner{display:none;background:var(--gold);color:var(--green-deep);text-align:center;font-size:13px;font-weight:700;padding:8px;}
+  .admin-on .admin-banner{display:block;}
+  .out-badge{position:absolute;top:10px;left:10px;background:var(--charcoal);color:var(--cream);font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:100px;letter-spacing:.03em;}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(22,32,26,.55);z-index:100;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:26px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;}
+  .modal h3{font-size:19px;margin-bottom:16px;}
+  .modal label{display:block;font-size:12.5px;font-weight:700;margin:14px 0 6px;color:var(--green-deep);}
+  .modal input[type=text],.modal input[type=number]{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;}
+  .modal input[type=file]{font-size:13px;}
+  .modal .stock-row{display:flex;align-items:center;gap:8px;margin-top:14px;}
+  .modal-actions{display:flex;gap:10px;margin-top:22px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:100px;border:none;font-weight:700;font-size:14px;cursor:pointer;}
+  .modal-actions .save-btn{background:var(--green-deep);color:var(--cream);}
+  .modal-actions .cancel-btn{background:#eee;color:var(--charcoal);}
+  .img-preview{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;margin-top:10px;background:var(--cream-2);}
+  .sync-note{text-align:center;font-size:12px;padding:6px;opacity:.55;}
+</style>
+</head>
+<body id="body-root">
+
+<div class="admin-banner">✏️ Edit mode is on — tap any item to edit, or use "+ Add item" in a section.</div>
+
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="logo">
+      <svg class="crownmark" viewBox="0 0 32 32" fill="none"><path d="M4 12L9 17L16 8L23 17L28 12L26 24H6L4 12Z" fill="#C9A227"/><rect x="6" y="25" width="20" height="3" rx="1" fill="#C9A227"/></svg>
+      Debby Crown Enterprises
+    </a>
+    <ul class="navlinks">
+      <li><a href="#men">Men</a></li><li><a href="#women">Women</a></li><li><a href="#kids">Kids</a></li><li><a href="#home">Home &amp; Kitchen</a></li><li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a class="icon-btn" href="https://wa.me/2347039226893" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.73 13.4L3 21l3.7-1.28a8.9 8.9 0 0 0 5.35 1.8h0a8.94 8.94 0 0 0 8.9-9c0-2.4-.9-4.6-2.35-6.2Z"/></svg></a>
+      <a class="icon-btn" href="https://www.tiktok.com/@debbycrown011" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.1 1.8 3.6 3.9 3.9v2.9c-1.4.1-2.7-.3-3.9-1.1v6.4c0 3.2-2.4 5.9-5.7 5.9-3.1 0-5.6-2.5-5.6-5.7 0-3.1 2.5-5.6 5.6-5.6.3 0 .6 0 .9.1v3c-.3-.1-.6-.2-.9-.2-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7c1.6 0 2.9-1.3 2.9-3V3h2.8Z"/></svg></a>
+      <a class="icon-btn" href="https://www.facebook.com/share/1FLZUgrUYs/?mibextid=wwXIfr" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu" onclick="toggleMobileMenu()"><span></span></button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#men" onclick="closeMobileMenu()">Men</a>
+      <a href="#women" onclick="closeMobileMenu()">Women</a>
+      <a href="#kids" onclick="closeMobileMenu()">Kids</a>
+      <a href="#home" onclick="closeMobileMenu()">Home &amp; Kitchen</a>
+      <a href="#contact" onclick="closeMobileMenu()">Contact</a>
+      <div class="mobile-socials">
+        <a class="icon-btn" href="https://wa.me/2347039226893" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.73 13.4L3 21l3.7-1.28a8.9 8.9 0 0 0 5.35 1.8h0a8.94 8.94 0 0 0 8.9-9c0-2.4-.9-4.6-2.35-6.2Z"/></svg></a>
+        <a class="icon-btn" href="https://www.tiktok.com/@debbycrown011" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.1 1.8 3.6 3.9 3.9v2.9c-1.4.1-2.7-.3-3.9-1.1v6.4c0 3.2-2.4 5.9-5.7 5.9-3.1 0-5.6-2.5-5.6-5.7 0-3.1 2.5-5.6 5.6-5.6.3 0 .6 0 .9.1v3c-.3-.1-.6-.2-.9-.2-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7c1.6 0 2.9-1.3 2.9-3V3h2.8Z"/></svg></a>
+        <a class="icon-btn" href="https://www.facebook.com/share/1FLZUgrUYs/?mibextid=wwXIfr" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="top" class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">+234 · Wears &amp; Home Essentials</span>
+      <h1>Look sharp. Cook smart.<br>Shop <em>Debby Crown.</em></h1>
+      <p class="lead">Quality clothing for men, women and children — plus the kitchen and home items that keep your house running. Browse the price tags below, then order in one WhatsApp message.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-whatsapp" href="https://wa.me/2347039226893?text=Hi%20Debby%20Crown%2C%20I%27d%20like%20to%20place%20an%20order" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.73 13.4L3 21l3.7-1.28a8.9 8.9 0 0 0 5.35 1.8h0a8.94 8.94 0 0 0 8.9-9c0-2.4-.9-4.6-2.35-6.2Z"/></svg>
+          Chat on WhatsApp
+        </a>
+        <a class="btn btn-outline" href="https://www.tiktok.com/@debbycrown011" target="_blank" rel="noopener">@debbycrown011</a>
+      </div>
+    </div>
+    <div class="hero-tagcard">
+      <h3>Why shop here</h3>
+      <p>Real prices up front, real photos of what's in stock, and same-day replies on WhatsApp.</p>
+      <p style="opacity:.6;font-size:12.5px;">Prices update as new stock comes in — nothing shown is ever unavailable.</p>
+    </div>
+  </div>
+</div>
+
+<div class="catstrip">
+  <div class="wrap">
+    <a href="#men">Men's Wear</a><a href="#women">Women's Wear</a><a href="#kids">Kids' Wear</a><a href="#home">Home &amp; Kitchen</a><a href="#contact">How to Order</a>
+  </div>
+</div>
+
+<section class="category" id="men"><div class="wrap">
+  <div class="section-head"><div><h2>Men's Wear</h2><p>Native, corporate and casual pieces for every occasion.</p></div>
+    <button class="add-btn" onclick="openModal('men')">+ Add item</button></div>
+  <div class="grid" id="grid-men"></div>
+</div></section>
+
+<section class="category" id="women"><div class="wrap">
+  <div class="section-head"><div><h2>Women's Wear</h2><p>Gowns, blouses and everyday styles that fit real life.</p></div>
+    <button class="add-btn" onclick="openModal('women')">+ Add item</button></div>
+  <div class="grid" id="grid-women"></div>
+</div></section>
+
+<section class="category" id="kids"><div class="wrap">
+  <div class="section-head"><div><h2>Kids' Wear</h2><p>Durable, playful and easy to wash — for boys and girls.</p></div>
+    <button class="add-btn" onclick="openModal('kids')">+ Add item</button></div>
+  <div class="grid" id="grid-kids"></div>
+</div></section>
+
+<section class="category" id="home"><div class="wrap">
+  <div class="section-head"><div><h2>Home &amp; Kitchen</h2><p>The utensils and home essentials your kitchen actually needs.</p></div>
+    <button class="add-btn" onclick="openModal('home')">+ Add item</button></div>
+  <div class="grid" id="grid-home"></div>
+</div></section>
+
+<section class="howto"><div class="wrap">
+  <div class="section-head"><div><h2>How to order</h2></div></div>
+  <div class="steps">
+    <div class="step"><span class="num">1</span><h4>Pick your item</h4><p>Scroll the sections above and note the item name and price.</p></div>
+    <div class="step"><span class="num">2</span><h4>Message us</h4><p>Tap "Order" on the item, or send us a WhatsApp message with the item name.</p></div>
+    <div class="step"><span class="num">3</span><h4>We confirm &amp; deliver</h4><p>We confirm stock and price, then arrange delivery or pickup with you.</p></div>
+  </div>
+</div></section>
+
+<footer id="contact"><div class="wrap">
+  <div class="contact-card">
+    <div><h2>Ready to shop?</h2><p>Message us on WhatsApp for the fastest reply, follow @debbycrown011 on TikTok, or find us on Facebook.</p></div>
+    <div class="contact-ctas">
+      <a class="btn btn-whatsapp" href="https://wa.me/2347039226893?text=Hi%20Debby%20Crown%2C%20I%27d%20like%20to%20place%20an%20order" target="_blank" rel="noopener">Message +234 703 922 6893</a>
+      <a class="btn" style="background:var(--green-deep);color:var(--cream);" href="https://www.tiktok.com/@debbycrown011" target="_blank" rel="noopener">Follow @debbycrown011</a>
+      <a class="btn" style="background:#1877F2;color:#fff;" href="https://www.facebook.com/share/1FLZUgrUYs/?mibextid=wwXIfr" target="_blank" rel="noopener">Find us on Facebook</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Debby Crown Enterprises. All prices subject to change.</span>
+    <div class="foot-socials">
+      <a class="icon-btn" href="https://wa.me/2347039226893" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.73 13.4L3 21l3.7-1.28a8.9 8.9 0 0 0 5.35 1.8h0a8.94 8.94 0 0 0 8.9-9c0-2.4-.9-4.6-2.35-6.2Z"/></svg></a>
+      <a class="icon-btn" href="https://www.tiktok.com/@debbycrown011" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.1 1.8 3.6 3.9 3.9v2.9c-1.4.1-2.7-.3-3.9-1.1v6.4c0 3.2-2.4 5.9-5.7 5.9-3.1 0-5.6-2.5-5.6-5.7 0-3.1 2.5-5.6 5.6-5.6.3 0 .6 0 .9.1v3c-.3-.1-.6-.2-.9-.2-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7c1.6 0 2.9-1.3 2.9-3V3h2.8Z"/></svg></a>
+      <a class="icon-btn" href="https://www.facebook.com/share/1FLZUgrUYs/?mibextid=wwXIfr" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+    </div>
+  </div>
+</div></footer>
+
+<p class="sync-note">Connected to live catalog — changes save instantly and appear for everyone.</p>
+
+<a class="float-wa" href="https://wa.me/2347039226893?text=Hi%20Debby%20Crown%2C%20I%27d%20like%20to%20place%20an%20order" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.73 13.4L3 21l3.7-1.28a8.9 8.9 0 0 0 5.35 1.8h0a8.94 8.94 0 0 0 8.9-9c0-2.4-.9-4.6-2.35-6.2Z"/></svg>
+</a>
+
+<button class="lock-btn" id="lockBtn" onclick="toggleAdmin()" aria-label="Owner edit mode" title="Owner edit mode">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+</button>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Edit item</h3>
+    <label>Photo</label>
+    <input type="file" accept="image/*" id="f-photo" onchange="previewPhoto(event)">
+    <img id="f-preview" class="img-preview" style="display:none;">
+    <label>Item name</label>
+    <input type="text" id="f-name" placeholder="e.g. Ankara Gown">
+    <label>Price (₦)</label>
+    <input type="number" id="f-price" placeholder="e.g. 12500">
+    <div class="stock-row">
+      <input type="checkbox" id="f-instock" checked>
+      <label style="margin:0;">In stock (visible on the site)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="save-btn" onclick="saveItem()">Save</button>
+    </div>
+    <div class="modal-actions" id="deleteRow" style="display:none;">
+      <button class="mini-btn del" style="width:100%;" onclick="deleteItem()">Delete this item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ FIREBASE SETUP ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBAq0ndJhuOxKHH717H6X4aJyuqBVXiHMA",
+  authDomain: "debby-crown.firebaseapp.com",
+  projectId: "debby-crown",
+  storageBucket: "debby-crown.firebasestorage.app",
+  messagingSenderId: "1084101643558",
+  appId: "1:1084101643558:web:b04b939a8f975500f145e7",
+  measurementId: "G-1DE5HM9454"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const catalogDoc = db.collection('catalog').doc('main');
+
+/* ============ APP STATE ============ */
+const ADMIN_PIN = "0110"; // change this to whatever PIN you want Debby to use
+let isAdmin = false;
+let catalog = null;
+let currentCategory = null;
+let currentItemId = null;
+let currentPhotoData = null;
+
+const waNumber = "2347039226893";
+
+const seedCatalog = {
+  men: [
+    {id:"m1", name:"Senator Wear (2pc)", price:9800, photo:null, inStock:true},
+    {id:"m2", name:"Plain Polo Shirt", price:4500, photo:null, inStock:true}
+  ],
+  women: [
+    {id:"w1", name:"Ankara Gown", price:12500, photo:null, inStock:true},
+    {id:"w2", name:"Chiffon Blouse", price:6800, photo:null, inStock:true}
+  ],
+  kids: [
+    {id:"k1", name:"Boys' 2-Piece Set", price:6000, photo:null, inStock:true},
+    {id:"k2", name:"Girls' Party Dress", price:7500, photo:null, inStock:true}
+  ],
+  home: [
+    {id:"h1", name:"Non-Stick Pot Set (4pc)", price:18000, photo:null, inStock:true},
+    {id:"h2", name:"Food Flask (2.5L)", price:8200, photo:null, inStock:true}
+  ]
+};
+
+function waLink(name, price){
+  const msg = `Hi, I'd like to order the ${name} - ₦${Number(price).toLocaleString()}`;
+  return `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+}
+
+function placeholderHTML(){
+  return `<div class="placeholder-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v4l3 2 3-2V3"/></svg><span>PHOTO COMING SOON</span></div>`;
+}
+
+function renderAll(){
+  ["men","women","kids","home"].forEach(renderCategory);
+}
+
+function renderCategory(cat){
+  const grid = document.getElementById("grid-"+cat);
+  if(!grid || !catalog) return;
+  const items = catalog[cat] || [];
+  grid.innerHTML = "";
+  items.forEach(item => {
+    if(!isAdmin && item.inStock === false) return;
+    const card = document.createElement("div");
+    card.className = "card";
+    const img = item.photo
+      ? `<img class="placeholder-img" style="object-fit:cover;" src="${item.photo}" alt="${item.name}">`
+      : placeholderHTML();
+    const outBadge = (isAdmin && item.inStock === false) ? `<span class="out-badge">OUT OF STOCK</span>` : "";
+    card.innerHTML = `
+      ${outBadge}
+      ${img}
+      <div class="card-body">
+        <h4>${item.name}</h4>
+        <div class="tag-price">
+          <span class="price-tag">₦${Number(item.price).toLocaleString()}</span>
+          <a class="order-link" href="${waLink(item.name, item.price)}" target="_blank" rel="noopener">Order</a>
+        </div>
+        ${isAdmin ? `<div class="card-edit-row">
+          <button class="mini-btn edit" onclick="openModal('${cat}','${item.id}')">Edit</button>
+        </div>` : ""}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* ============ ADMIN MODE ============ */
+function toggleAdmin(){
+  if(!isAdmin){
+    const pin = prompt("Enter owner PIN to edit the site:");
+    if(pin !== ADMIN_PIN){
+      if(pin !== null) alert("Wrong PIN.");
+      return;
+    }
+    isAdmin = true;
+  } else {
+    isAdmin = false;
+  }
+  document.getElementById("body-root").classList.toggle("admin-on", isAdmin);
+  renderAll();
+}
+
+/* ============ MOBILE MENU ============ */
+function toggleMobileMenu(){
+  document.getElementById("mobileMenu").classList.toggle("open");
+  document.getElementById("hamburgerBtn").classList.toggle("open");
+}
+function closeMobileMenu(){
+  document.getElementById("mobileMenu").classList.remove("open");
+  document.getElementById("hamburgerBtn").classList.remove("open");
+}
+
+/* ============ MODAL ============ */
+function openModal(cat, itemId){
+  currentCategory = cat;
+  currentItemId = itemId || null;
+  currentPhotoData = null;
+  document.getElementById("f-photo").value = "";
+  document.getElementById("f-preview").style.display = "none";
+  document.getElementById("deleteRow").style.display = itemId ? "flex" : "none";
+
+  if(itemId){
+    const item = catalog[cat].find(i => i.id === itemId);
+    document.getElementById("modalTitle").innerText = "Edit item";
+    document.getElementById("f-name").value = item.name;
+    document.getElementById("f-price").value = item.price;
+    document.getElementById("f-instock").checked = item.inStock !== false;
+    if(item.photo){
+      currentPhotoData = item.photo;
+      const p = document.getElementById("f-preview");
+      p.src = item.photo; p.style.display = "block";
+    }
+  } else {
+    document.getElementById("modalTitle").innerText = "Add new item";
+    document.getElementById("f-name").value = "";
+    document.getElementById("f-price").value = "";
+    document.getElementById("f-instock").checked = true;
+  }
+  document.getElementById("modalBg").classList.add("open");
+}
+
+function closeModal(){
+  document.getElementById("modalBg").classList.remove("open");
+}
+
+function previewPhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const maxW = 700;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      currentPhotoData = dataUrl;
+      const p = document.getElementById("f-preview");
+      p.src = dataUrl; p.style.display = "block";
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveItem(){
+  const name = document.getElementById("f-name").value.trim();
+  const price = document.getElementById("f-price").value;
+  const inStock = document.getElementById("f-instock").checked;
+  if(!name || !price){ alert("Please fill in the item name and price."); return; }
+
+  if(currentItemId){
+    const item = catalog[currentCategory].find(i => i.id === currentItemId);
+    item.name = name; item.price = price; item.inStock = inStock;
+    if(currentPhotoData) item.photo = currentPhotoData;
+  } else {
+    catalog[currentCategory].push({
+      id: currentCategory + "-" + Date.now(),
+      name, price, inStock,
+      photo: currentPhotoData || null
+    });
+  }
+  await persistCatalog();
+  closeModal();
+}
+
+async function deleteItem(){
+  if(!confirm("Delete this item?")) return;
+  catalog[currentCategory] = catalog[currentCategory].filter(i => i.id !== currentItemId);
+  await persistCatalog();
+  closeModal();
+}
+
+/* ============ FIRESTORE READ/WRITE ============ */
+async function persistCatalog(){
+  try{
+    await catalogDoc.set(catalog);
+    // renderAll() is also triggered by the live listener below,
+    // but we call it here too so the editor's own screen updates instantly.
+    renderAll();
+  } catch(err){
+    console.error("Save failed", err);
+    alert("Could not save right now — please check your internet connection and try again.");
+  }
+}
+
+// Live listener: keeps the page in sync in real time for every visitor,
+// and creates the document with starter items the very first time it runs.
+catalogDoc.onSnapshot(
+  (doc) => {
+    if(doc.exists){
+      catalog = doc.data();
+    } else {
+      catalog = seedCatalog;
+      catalogDoc.set(seedCatalog).catch(e => console.error("Seed failed", e));
+    }
+    renderAll();
+  },
+  (err) => {
+    console.error("Live sync error", err);
+    if(!catalog){
+      catalog = seedCatalog;
+      renderAll();
+    }
+  }
+);
+</script>
+
+</body>
+</html>
